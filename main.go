@@ -1,26 +1,27 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net"
 )
 
-func readBytes(reader *bufio.Reader) string {
-	for {
-		bytik, err := reader.ReadByte()
-		if err != nil {
-			break
+/*
+	func readBytes(reader *bufio.Reader) string {
+		for {
+			bytik, err := reader.ReadByte()
+			if err != nil {
+				break
+			}
+			data = append(data, bytik)
+			if bytik == 112 {
+				break
+			}
 		}
-		data = append(data, bytik)
-		if bytik == 112 {
-			break
-		}
+		return "tmp"
 	}
-	return "tmp"
-}
+*/
 func main() {
 	const (
 		getPos   byte = 112
@@ -38,18 +39,21 @@ func main() {
 	coord.Az = 17
 	coord.El = 12
 	fmt.Println(coord.GetPositionMassive())
-
+	data := make([]byte, 256)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Printf("Connect to ip = %v", conn.RemoteAddr())
-		buff := bufio.NewReader(conn)
+		//	buff := bufio.NewReader(conn)
 		for {
 			fmt.Println(coord.GetPositionMassive())
-			data := readBytes(buff)
-
+			_, err = conn.Read(data)
+			if err != nil {
+				log.Println(err)
+				break
+			}
 			fmt.Println(data)
 			if data[0] == getPos {
 				_, err := io.WriteString(conn, coord.GetPosition())
