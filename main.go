@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 )
 
 /*
@@ -22,13 +23,22 @@ import (
 		return "tmp"
 	}
 */
+func getData(conn net.Conn) []string {
+	data := make([]byte, 256)
+	_, err := conn.Read(data)
+	if err != nil {
+		conn.Close()
+		log.Fatal(err)
+	}
+	return strings.Split(string(data), " ")
+}
 func main() {
 	const (
-		getPos   byte = 112
-		setPos   byte = 80
-		shutdown byte = 83
-		buffSize      = 256
+		getPos   string = "p"
+		setPos   string = "P"
+		shutdown string = "S"
 	)
+
 	log.Printf("Starting tcp server")
 	listener, err := net.Listen("tcp", ":8081")
 	if err != nil {
@@ -38,38 +48,30 @@ func main() {
 	var coord Coordinats
 	coord.Az = 17
 	coord.El = 12
-	fmt.Println(coord.GetPositionMassive())
-	data := make([]byte, 256)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatal(err)
 		}
 		log.Printf("Connect to ip = %v", conn.RemoteAddr())
-		//	buff := bufio.NewReader(conn)
+
 		for {
-			fmt.Println(coord.GetPositionMassive())
-			_, err = conn.Read(data)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			fmt.Println(data)
+			data := getData(conn)
+			fmt.Printf("%v\n", data[0])
+			fmt.Printf("%v\n", data[0] == "p")
+			fmt.Printf("%s\n", data[0] == getPos)
 			if data[0] == getPos {
 				_, err := io.WriteString(conn, coord.GetPosition())
 				if err != nil {
 					return
 				}
 			}
-			log.Printf("Recieved data: %s", data)
 
-			log.Printf("Recieved data: %v", data)
-			if data[0] == 83 {
+			if data[0] == shutdown {
 				fmt.Println("Было разорвано соединение с Gpredict")
 				conn.Close()
 				break
 			}
-
 		}
 	}
 }
