@@ -23,7 +23,7 @@ func (d *Data) DataF() {
 				if string2[i] != 44 {
 					s += string(string2[i])
 				} else {
-					s += string(46)
+					s += string('.')
 				}
 			}
 		}
@@ -32,16 +32,16 @@ func (d *Data) DataF() {
 	return
 }
 
-func (d *Data) Get(conn net.Conn) {
-	_, err := conn.Read(d.Data)
+func (d *Data) Get(conn net.Conn) (err error) {
+	tmp := make([]byte, 256)
+	_, err = conn.Read(tmp)
+	d.Data = tmp
 	if err != nil {
-		conn.Close()
-		log.Fatal(err)
+		log.Println(err)
+		return err
 	}
-	log.Println(d.Data)
 	d.DataF()
-	log.Println(d.S)
-	return
+	return nil
 }
 
 func main() {
@@ -70,7 +70,11 @@ func main() {
 		log.Printf("Connect to ip = %v", conn.RemoteAddr())
 
 		for {
-			data.Get(conn)
+			err = data.Get(conn)
+			if err != nil {
+				conn.Close()
+				break
+			}
 			if data.S[0][0] == getPos {
 				_, err := io.WriteString(conn, coord.GetPosition())
 				if err != nil {
@@ -79,9 +83,15 @@ func main() {
 			}
 
 			if data.S[0][0] == shutdown {
-				fmt.Println("Было разорвано соединение с Gpredict")
+				log.Println("Было разорвано соединение с Gpredict")
+				_, err = io.WriteString(conn, "Ok")
+				if err != nil {
+					log.Println(err)
+					log.Fatal()
+				}
 				conn.Close()
 				break
+
 			}
 
 			if data.S[0][0] == setPos {
@@ -95,8 +105,13 @@ func main() {
 					log.Println(err)
 					continue
 				}
+				_, err = io.WriteString(conn, "Ok")
+				if err != nil {
+					log.Println(err)
+					continue
+				}
 				coord.SetPositon(az, el)
-				fmt.Println(coord)
+				log.Println(coord)
 			}
 		}
 	}
