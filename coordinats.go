@@ -19,9 +19,7 @@ func (c Coordinats) GetPositionMassive() []float64 {
 	return []float64{c.Az, c.El}
 }
 
-/*
-func (c Coordinats) SetCoordinats(b []byte) {
-	c.Az = b[0]
-
+func (c *Coordinats) SetPositon(az, el float64) {
+	c.Az = az
+	c.El = el
 }
-*/

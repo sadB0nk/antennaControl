@@ -5,24 +5,22 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 )
 
-/*
-	func readBytes(reader *bufio.Reader) string {
-		for {
-			bytik, err := reader.ReadByte()
-			if err != nil {
-				break
-			}
-			data = append(data, bytik)
-			if bytik == 112 {
-				break
+func dataF(string2 string) (s string) {
+	for i := 0; i < len(string2); i++ {
+		if string2[i] != '\x00' {
+			if string2[i] != 44 {
+				s += string(string2[i])
+			} else {
+				s += string(46)
 			}
 		}
-		return "tmp"
 	}
-*/
+	return
+}
 func getData(conn net.Conn) []string {
 	data := make([]byte, 256)
 	_, err := conn.Read(data)
@@ -30,13 +28,15 @@ func getData(conn net.Conn) []string {
 		conn.Close()
 		log.Fatal(err)
 	}
+	log.Println(data)
 	return strings.Split(string(data), " ")
 }
+
 func main() {
 	const (
-		getPos   string = "p"
-		setPos   string = "P"
-		shutdown string = "S"
+		getPos   byte = 'p'
+		setPos   byte = 'P'
+		shutdown byte = 'S'
 	)
 
 	log.Printf("Starting tcp server")
@@ -57,20 +57,28 @@ func main() {
 
 		for {
 			data := getData(conn)
-			fmt.Printf("%v\n", data[0])
-			fmt.Printf("%v\n", data[0] == "p")
-			fmt.Printf("%s\n", data[0] == getPos)
-			if data[0] == getPos {
+			if data[0][0] == getPos {
 				_, err := io.WriteString(conn, coord.GetPosition())
 				if err != nil {
 					return
 				}
 			}
 
-			if data[0] == shutdown {
+			if data[0][0] == shutdown {
 				fmt.Println("Было разорвано соединение с Gpredict")
 				conn.Close()
 				break
+			}
+
+			if data[0][0] == setPos {
+				az, err := strconv.ParseFloat(dataF(data[1]), 64)
+				el, err := strconv.ParseFloat(dataF(data[2]), 64)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				coord.SetPositon(az, el)
+				fmt.Println(coord)
 			}
 		}
 	}
