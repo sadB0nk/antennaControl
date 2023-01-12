@@ -10,13 +10,13 @@ import (
 )
 
 type Data struct {
-	Data []byte
-	S    []string
+	Bytes   []byte
+	Strings []string
 }
 
 // Форматирование данных, заменг запятых на точки и уборка нулевых символов
 func (d *Data) DataF() {
-	tmp := strings.Split(string(d.Data), " ")
+	tmp := strings.Split(string(d.Bytes), " ")
 	for i, string2 := range tmp {
 		s := ""
 		for i := 0; i < len(string2); i++ {
@@ -28,7 +28,7 @@ func (d *Data) DataF() {
 				}
 			}
 		}
-		d.S[i] = s
+		d.Strings[i] = s
 	}
 	return
 }
@@ -37,7 +37,7 @@ func (d *Data) DataF() {
 func (d *Data) Get(conn net.Conn) (err error) {
 	tmp := make([]byte, 256)
 	_, err = conn.Read(tmp)
-	d.Data = tmp
+	d.Bytes = tmp
 	if err != nil {
 		log.Println(err)
 		return err
@@ -77,14 +77,14 @@ func main() {
 				conn.Close()
 				break
 			}
-			if data.S[0][0] == getPos { // обработка данных взасимости от данных приложения
+			if data.Strings[0][0] == getPos { // обработка данных взасимости от данных приложения
 				_, err := io.WriteString(conn, coord.GetPosition())
 				if err != nil {
 					return
 				}
 			}
 
-			if data.S[0][0] == shutdown {
+			if data.Strings[0][0] == shutdown {
 				log.Println("Было разорвано соединение с Gpredict") // закрытые соединения
 				_, err = io.WriteString(conn, "Ok")
 				if err != nil {
@@ -94,13 +94,13 @@ func main() {
 				conn.Close()
 				break
 			}
-			if data.S[0][0] == setPos { // сет координат
-				az, err := strconv.ParseFloat(data.S[1], 64) // конвертирование  строки в float
+			if data.Strings[0][0] == setPos { // сет координат
+				az, err := strconv.ParseFloat(data.Strings[1], 64) // конвертирование  строки в float
 				if err != nil {
 					log.Println(err)
 					continue
 				}
-				el, err := strconv.ParseFloat(fmt.Sprintf(data.S[2]), 64)
+				el, err := strconv.ParseFloat(fmt.Sprintf(data.Strings[2]), 64)
 				if err != nil {
 					log.Println(err)
 					continue
