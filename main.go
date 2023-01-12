@@ -14,6 +14,7 @@ type Data struct {
 	S    []string
 }
 
+// Форматирование данных, заменг запятых на точки и уборка нулевых символов
 func (d *Data) DataF() {
 	tmp := strings.Split(string(d.Data), " ")
 	for i, string2 := range tmp {
@@ -32,6 +33,7 @@ func (d *Data) DataF() {
 	return
 }
 
+// Получение данных от Gpredict
 func (d *Data) Get(conn net.Conn) (err error) {
 	tmp := make([]byte, 256)
 	_, err = conn.Read(tmp)
@@ -59,10 +61,10 @@ func main() {
 		log.Fatal(err)
 	}
 	defer listener.Close()
-	var coord Coordinats
+	var coord Coordinats // инициализация структуры координат
 	coord.Az = 17
 	coord.El = 12
-	for {
+	for { // Дальше это должно стать отдельным потоком
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatal(err)
@@ -70,12 +72,12 @@ func main() {
 		log.Printf("Connect to ip = %v", conn.RemoteAddr())
 
 		for {
-			err = data.Get(conn)
+			err = data.Get(conn) // получение данных
 			if err != nil {
 				conn.Close()
 				break
 			}
-			if data.S[0][0] == getPos {
+			if data.S[0][0] == getPos { // обработка данных взасимости от данных приложения
 				_, err := io.WriteString(conn, coord.GetPosition())
 				if err != nil {
 					return
@@ -83,7 +85,7 @@ func main() {
 			}
 
 			if data.S[0][0] == shutdown {
-				log.Println("Было разорвано соединение с Gpredict")
+				log.Println("Было разорвано соединение с Gpredict") // закрытые соединения
 				_, err = io.WriteString(conn, "Ok")
 				if err != nil {
 					log.Println(err)
@@ -91,11 +93,9 @@ func main() {
 				}
 				conn.Close()
 				break
-
 			}
-
-			if data.S[0][0] == setPos {
-				az, err := strconv.ParseFloat(data.S[1], 64)
+			if data.S[0][0] == setPos { // сет координат
+				az, err := strconv.ParseFloat(data.S[1], 64) // конвертирование  строки в float
 				if err != nil {
 					log.Println(err)
 					continue

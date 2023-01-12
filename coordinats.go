@@ -4,12 +4,14 @@ import (
 	"fmt"
 )
 
+// структура координат и методы доступа
 type Coordinats struct {
 	Az float64
 	El float64
 }
 
-func (c Coordinats) String() string {
+// дальше должна добавится блокировка для многопотока
+func (c Coordinats) String() string { // Нужно для автоматического форматирования данных в консоль fmt.Println(Coordinats)
 	return fmt.Sprintf("Az:%g	El:%g", c.Az, c.El)
 }
 func (c Coordinats) GetPosition() string {
