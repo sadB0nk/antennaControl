@@ -1,4 +1,4 @@
-package main
+package tcpServer
 
 import (
 	"io"
@@ -6,13 +6,12 @@ import (
 	"strings"
 )
 
-type Data struct {
+type data struct {
 	Bytes   []byte
 	Strings []string
 }
 
-// Форматирование данных, заменг запятых на точки и уборка нулевых символов
-func (d *Data) DataF() {
+func (d *data) dataF() {
 	tmp := strings.Split(string(d.Bytes), " ")
 	for i, string2 := range tmp {
 		s := ""
@@ -31,7 +30,7 @@ func (d *Data) DataF() {
 }
 
 // Получение данных от Gpredict
-func (d *Data) Get(conn io.Reader) (err error) {
+func (d *data) get(conn io.Reader) (err error) {
 	tmp := make([]byte, 256)
 	_, err = conn.Read(tmp)
 	d.Bytes = tmp
@@ -39,6 +38,6 @@ func (d *Data) Get(conn io.Reader) (err error) {
 		log.Println(err)
 		return err
 	}
-	d.DataF()
+	d.dataF()
 	return nil
 }

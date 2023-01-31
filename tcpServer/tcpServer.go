@@ -1,6 +1,7 @@
-package main
+package tcpServer
 
 import (
+	"antennaControl/coordinats"
 	"fmt"
 	"io"
 	"log"
@@ -9,42 +10,53 @@ import (
 )
 
 type tcpServ struct {
+	d data
+}
+type Server interface {
+	Start(coord *coordinats.Coord) (err error)
 }
 
-func (tcpServ) Start() {
-	defer sw.Done()
+func Start(coord *coordinats.Coord) (err error) {
+	var s tcpServ
+	return s.start(coord)
+}
+func (s tcpServ) start(coord *coordinats.Coord) (err error) {
+
 	const (
 		getPos   byte = 'p'
 		setPos   byte = 'P'
 		shutdown byte = 'S'
 	)
 	log.Printf("Starting tcp server")
-	listener, err := net.Listen("tcp", ":8081")
+	listener, err := net.Listen("tcp", ":8082")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer listener.Close()
-	data := Data{make([]byte, 256),
-		make([]string, 4)}
+	log.Printf("Server started")
+	data := s.d
+	data.Bytes = make([]byte, 256)
+	data.Strings = make([]string, 256)
 
 	for { // Дальше это должно стать отдельным потоком
+		log.Printf("Starting accepting")
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		log.Printf("Connect to ip = %v", conn.RemoteAddr())
 
 		for {
-			err = data.Get(conn) // получение данных
+			err = data.get(conn) // получение данных
 			if err != nil {
 				conn.Close()
 				break
 			}
 			// обработка данных взасимости от данных приложения
 			if data.Strings[0][0] == getPos {
-				_, err := io.WriteString(conn, coord.GetSpherePos())
+				_, err := io.WriteString(conn, coord.RectToSphere().Get())
 				if err != nil {
-					return
+					return err
 				}
 			}
 			// закрытые соединения
@@ -52,8 +64,7 @@ func (tcpServ) Start() {
 				log.Println("Было разорвано соединение с Gpredict")
 				_, err = io.WriteString(conn, "Ok")
 				if err != nil {
-					log.Println(err)
-					log.Fatal()
+					return err
 				}
 				conn.Close()
 				break
@@ -75,8 +86,7 @@ func (tcpServ) Start() {
 					log.Println(err)
 					continue
 				}
-				coord.SetPositon(az, el)
-				log.Println(coord)
+				coord.S.Set(az, el)
 			}
 		}
 	}
